@@ -3,11 +3,7 @@ import * as compression from 'compression';
 import * as bodyParser from 'body-parser';
 import {Request, Response, NextFunction} from 'express';
 import routes from './routes';
-// import * as crypto from 'crypto';
-// import * as multer from 'multer';
-// import * as GridFsStorage from 'multer-gridfs-storage';
-// import * as Grid from 'gridfs-stream';
-// import * as path from 'path';
+import logRequest from './middlewares/logRequest';
 
 // Create Express server.
 const app = express();
@@ -17,7 +13,8 @@ app.set('port', process.env.PORT || 5000);
 app.use(compression());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-app.set('view engine', 'ejs');
+app.use(logRequest);
+// app.set('view engine', 'ejs');
 
 app.get('/', (_, res) => {
   res.json({
