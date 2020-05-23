@@ -1,8 +1,8 @@
 import * as socketio from 'socket.io';
 import * as lodash from 'lodash';
-import Server from './app';
+import * as server from './server';
 
-const io = socketio(Server);
+const io = socketio.listen(server);
 
 interface USER {
   id: string;
@@ -55,19 +55,19 @@ const validateLastKnownTime = (lastKnownTime: number) => {
     lastKnownTime % 1 === 0 &&
     lastKnownTime >= 0
   );
-}
+};
 
 const validateBoolean = (boolean: boolean) => {
   return typeof boolean === 'boolean';
 };
 
 const validateAudioId = (audioId: string) => {
-  return typeof audioId === 'string'
+  return typeof audioId === 'string';
 };
 
-io.on('connection', socket => {
+io.on('connection', (socket: socketio.Socket) => {
   let userId: string = makeId();
-  while (users.hasOwnProperty(userId)) {
+  while (Object.prototype.hasOwnProperty.call(users, userId)) {
     userId = makeId();
   }
   users[userId] = {
@@ -111,8 +111,8 @@ io.on('connection', socket => {
     }
   };
 
-  socket.on('createRoom', (data) => {
-    if (!users.hasOwnProperty(userId)) {
+  socket.on('createRoom', (data: Record<string, string>) => {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
@@ -121,13 +121,13 @@ io.on('connection', socket => {
     if (!validateAudioId(data.title)) {
       //inform
       console.log(
-        `User ${userId} attempted to create room with invalid audio ${JSON.stringify(data.audioId)}.`
+        `User ${userId} attempted to create room with invalid audio ${data.title}.`
       );
       return;
     }
 
     let roomId = makeId();
-    while (rooms.hasOwnProperty(roomId)) {
+    while (Object.prototype.hasOwnProperty.call(rooms, roomId)) {
       roomId = makeId();
     }
     const initial_state: STATE = {
@@ -151,18 +151,21 @@ io.on('connection', socket => {
     console.log('User ' + userId + ' created room ' + users[userId].roomId);
   });
 
-  socket.on('joinRoom', data => {
+  socket.on('joinRoom', (data: Record<string, string>) => {
     const roomId = data.roomId;
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
     }
 
-    if (!validateId(roomId) || !rooms.hasOwnProperty(roomId)) {
+    if (
+      !validateId(roomId) ||
+      !Object.prototype.hasOwnProperty.call(rooms, roomId)
+    ) {
       //inform
       console.log(
-        `User ${userId} attempted to join nonexistent room ${JSON.stringify(roomId)}.`
+        `User ${userId} attempted to join nonexistent room ${roomId}.`
       );
       return;
     }
@@ -183,7 +186,7 @@ io.on('connection', socket => {
   });
 
   socket.on('leaveRoom', () => {
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
@@ -203,7 +206,7 @@ io.on('connection', socket => {
   });
 
   socket.on('pause', (data: STATE) => {
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
@@ -230,7 +233,9 @@ io.on('connection', socket => {
     if (!validateBoolean(data.is_playing)) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} with invalid state ${JSON.stringify(data)}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } with invalid state ${JSON.stringify(data)}.`
       );
       return;
     }
@@ -241,7 +246,9 @@ io.on('connection', socket => {
     ) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
       );
       return;
     }
@@ -249,14 +256,15 @@ io.on('connection', socket => {
     rooms[users[userId].roomId].state = data;
 
     console.log(
-      `User ${userId} paused roomId ${users[userId].roomId} at ${(data.position)} on epoch ${(data.last_updated)}.`
+      `User ${userId} paused roomId ${users[userId].roomId} at ${data.position} on epoch ${data.last_updated}.`
     );
-    socket.to(users[userId].roomId).emit('pause', rooms[users[userId].roomId].state);
+    socket
+      .to(users[userId].roomId)
+      .emit('pause', rooms[users[userId].roomId].state);
   });
 
-
   socket.on('play', (data: STATE) => {
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
@@ -283,7 +291,9 @@ io.on('connection', socket => {
     if (!validateBoolean(data.is_playing)) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} with invalid state ${JSON.stringify(data)}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } with invalid state ${JSON.stringify(data)}.`
       );
       return;
     }
@@ -294,7 +304,9 @@ io.on('connection', socket => {
     ) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
       );
       return;
     }
@@ -302,13 +314,15 @@ io.on('connection', socket => {
     rooms[users[userId].roomId].state = data;
 
     console.log(
-      `User ${userId} paused roomId ${users[userId].roomId} at ${(data.position)} on epoch ${(data.last_updated)}.`
+      `User ${userId} paused roomId ${users[userId].roomId} at ${data.position} on epoch ${data.last_updated}.`
     );
-    socket.to(users[userId].roomId).emit('play', rooms[users[userId].roomId].state);
+    socket
+      .to(users[userId].roomId)
+      .emit('play', rooms[users[userId].roomId].state);
   });
 
   socket.on('seek', (data: STATE) => {
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       //inform
       console.log('The socket received a message after it was disconnected.');
       return;
@@ -335,7 +349,9 @@ io.on('connection', socket => {
     if (!validateBoolean(data.is_playing)) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} with invalid state ${JSON.stringify(data)}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } with invalid state ${JSON.stringify(data)}.`
       );
       return;
     }
@@ -346,7 +362,9 @@ io.on('connection', socket => {
     ) {
       //inform
       console.log(
-        `User ${userId} attempted to update room ${users[userId].roomId} but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+        `User ${userId} attempted to update room ${
+          users[userId].roomId
+        } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
       );
       return;
     }
@@ -354,13 +372,15 @@ io.on('connection', socket => {
     rooms[users[userId].roomId].state = data;
 
     console.log(
-      `User ${userId} paused roomId ${users[userId].roomId} at ${(data.position)} on epoch ${(data.last_updated)}.`
+      `User ${userId} paused roomId ${users[userId].roomId} at ${data.position} on epoch ${data.last_updated}.`
     );
-    socket.to(users[userId].roomId).emit('seek', rooms[users[userId].roomId].state);
+    socket
+      .to(users[userId].roomId)
+      .emit('seek', rooms[users[userId].roomId].state);
   });
 
   socket.on('disconnect', () => {
-    if (!users.hasOwnProperty(userId)) {
+    if (!Object.prototype.hasOwnProperty.call(users, userId)) {
       console.log('The socket received a message after it was disconnected.');
       return;
     }
