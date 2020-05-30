@@ -1,8 +1,6 @@
 import * as socketio from 'socket.io';
 import * as lodash from 'lodash';
 
-//const io = socketio.listen(server);
-
 interface USER {
   id: string;
   roomId: string;
@@ -74,7 +72,7 @@ const socket = (io: any) => {
       roomId: '',
       socket: socket,
     };
-    socket.emit('userId', userId);
+    socket.emit('userId', {userId: userId});
     console.log('User ' + userId + ' connected.');
 
     const sendMessage = (body: string, isSystemMessage: boolean) => {
@@ -125,6 +123,12 @@ const socket = (io: any) => {
         return;
       }
 
+      if (users[userId].roomId !== '') {
+        //inform
+        console.log('User already in a room.');
+        return;
+      }
+
       let roomId = makeId();
       while (Object.prototype.hasOwnProperty.call(rooms, roomId)) {
         roomId = makeId();
@@ -146,8 +150,9 @@ const socket = (io: any) => {
       users[userId].roomId = roomId;
       rooms[room.id] = room;
       socket.join(roomId);
-      sendMessage('created the room', true);
+      sendMessage('created the room:', true);
       console.log('User ' + userId + ' created room ' + users[userId].roomId);
+      io.in(roomId).emit('createRoom', {roomId: roomId});
     });
 
     socket.on('joinRoom', (data: Record<string, string>) => {
