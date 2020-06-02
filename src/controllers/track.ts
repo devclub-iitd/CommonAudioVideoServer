@@ -104,7 +104,7 @@ export const postAudio = async (
       trackBinaryId: req.file.id,
     });
     await track.save();
-    return res.json({file: req.file});
+    return res.json({file: req.file, trackId: track._id});
   } catch (err) {
     return next(err);
   }

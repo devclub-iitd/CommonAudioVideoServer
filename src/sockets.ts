@@ -1,5 +1,6 @@
 import * as socketio from 'socket.io';
-import * as lodash from 'lodash';
+// import * as lodash from 'lodash';
+import Track from './models/track';
 
 interface USER {
   id: string;
@@ -28,6 +29,7 @@ interface ROOM {
   userIds: string[];
   ownerId: string;
   state: STATE;
+  trackId: string;
 }
 
 const users: Record<string, USER> = {};
@@ -46,10 +48,22 @@ const validateId = (id: string) => {
   return typeof id === 'string' && id.length === 16;
 };
 
+const validateTrackId = async (id: string) => {
+  try {
+    const track = await Track.findById(id);
+    if (!track) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const validateLastKnownTime = (lastKnownTime: number) => {
   return (
     typeof lastKnownTime === 'number' &&
-    lastKnownTime % 1 === 0 &&
+    // lastKnownTime % 1 === 0 &&
     lastKnownTime >= 0
   );
 };
@@ -82,33 +96,41 @@ const socket = (io: any) => {
         timestamp: new Date(),
         userId: userId,
       };
-      rooms[users[userId].roomId].messages.push(message);
+      // try {
+      //   rooms[users[userId].roomId].messages.push(message);
+      // } catch (error) {
+      //   console.log(error);
+      // }
 
-      console.log('Sending message in room ' + users[userId].roomId + '.');
-      io.sockets.in(users[userId].roomId).emit('sendMessage', {
-        body: message.body,
-        isSystemMessage: isSystemMessage,
-        timestamp: message.timestamp.getTime(),
-        userId: message.userId,
-      });
+      // console.log('Sending message in room ' + users[userId].roomId + '.');
+      // io.sockets.in(users[userId].roomId).emit('sendMessage', {
+      //   body: message.body,
+      //   isSystemMessage: isSystemMessage,
+      //   timestamp: message.timestamp.getTime(),
+      //   userId: message.userId,
+      // });
     };
 
     const leaveRoom = () => {
       sendMessage('left', true);
       const roomId = users[userId].roomId;
+      console.log(roomId);
       socket.leave(roomId);
-      lodash.pull(rooms[roomId].userIds, userId);
+      // lodash.pull(rooms[roomId].userIds, userId);
       users[userId].roomId = '';
-
-      if (rooms[roomId].userIds.length === 0) {
-        delete rooms[roomId];
-        console.log(
-          `Room ${roomId} was deleted because there were no more users in it.`
-        );
+      try {
+        if (rooms[roomId].userIds.length === 0) {
+          delete rooms[roomId];
+          console.log(
+            `Room ${roomId} was deleted because there were no more users in it.`
+          );
+        }
+      } catch (error) {
+        console.log(error);
       }
     };
 
-    socket.on('createRoom', (data: Record<string, string>) => {
+    socket.on('createRoom', async (data: Record<string, string>) => {
       if (!Object.prototype.hasOwnProperty.call(users, userId)) {
         //inform
         console.log('The socket received a message after it was disconnected.');
@@ -119,6 +141,13 @@ const socket = (io: any) => {
         //inform
         console.log(
           `User ${userId} attempted to create room with invalid audio ${data.title}.`
+        );
+        return;
+      }
+
+      if (!(await validateTrackId(data.trackId))) {
+        console.log(
+          `User ${userId} attempted to create room with invalid trackId ${data.trackId}.`
         );
         return;
       }
@@ -146,6 +175,7 @@ const socket = (io: any) => {
         state: initial_state,
         userIds: [userId],
         ownerId: userId,
+        trackId: data.trackId,
       };
       users[userId].roomId = roomId;
       rooms[room.id] = room;
@@ -187,6 +217,8 @@ const socket = (io: any) => {
       socket.join(roomId);
       sendMessage('joined', true);
       console.log('User ' + userId + ' joined room ' + roomId + '.');
+      socket.emit('trackId', {trackId: rooms[roomId].trackId});
+      socket.emit('joinRoom', rooms[roomId].state);
     });
 
     socket.on('leaveRoom', () => {
@@ -254,7 +286,7 @@ const socket = (io: any) => {
             users[userId].roomId
           } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
         );
-        return;
+        // return;
       }
 
       rooms[users[userId].roomId].state = data;
@@ -312,13 +344,13 @@ const socket = (io: any) => {
             users[userId].roomId
           } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
         );
-        return;
+        // return;
       }
 
       rooms[users[userId].roomId].state = data;
 
       console.log(
-        `User ${userId} paused roomId ${users[userId].roomId} at ${data.position} on epoch ${data.last_updated}.`
+        `User ${userId} played roomId ${users[userId].roomId} at ${data.position} on epoch ${data.last_updated}.`
       );
       socket
         .to(users[userId].roomId)
@@ -370,7 +402,7 @@ const socket = (io: any) => {
             users[userId].roomId
           } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
         );
-        return;
+        // return;
       }
 
       rooms[users[userId].roomId].state = data;
