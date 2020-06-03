@@ -30,6 +30,7 @@ interface ROOM {
   ownerId: string;
   state: STATE;
   trackId: string;
+  onlyHost: boolean;
 }
 
 const users: Record<string, USER> = {};
@@ -130,14 +131,14 @@ const socket = (io: any) => {
       }
     };
 
-    socket.on('createRoom', async (data: Record<string, string>) => {
+    socket.on('createRoom', async (data: Record<string, string | boolean>) => {
       if (!Object.prototype.hasOwnProperty.call(users, userId)) {
         //inform
         console.log('The socket received a message after it was disconnected.');
         return;
       }
 
-      if (!validateAudioId(data.title)) {
+      if (!validateAudioId(data.title as string)) {
         //inform
         console.log(
           `User ${userId} attempted to create room with invalid audio ${data.title}.`
@@ -145,7 +146,7 @@ const socket = (io: any) => {
         return;
       }
 
-      if (!(await validateTrackId(data.trackId))) {
+      if (!(await validateTrackId(data.trackId as string))) {
         console.log(
           `User ${userId} attempted to create room with invalid trackId ${data.trackId}.`
         );
@@ -166,7 +167,7 @@ const socket = (io: any) => {
         is_playing: false,
         position: 0,
         last_updated: 0,
-        title: data.title,
+        title: data.title as string,
         duration: 0,
       };
       const room = {
@@ -175,7 +176,8 @@ const socket = (io: any) => {
         state: initial_state,
         userIds: [userId],
         ownerId: userId,
-        trackId: data.trackId,
+        trackId: data.trackId as string,
+        onlyHost: data.onlyHost as boolean,
       };
       users[userId].roomId = roomId;
       rooms[room.id] = room;
@@ -218,7 +220,7 @@ const socket = (io: any) => {
       sendMessage('joined', true);
       console.log('User ' + userId + ' joined room ' + roomId + '.');
       socket.emit('trackId', {trackId: rooms[roomId].trackId});
-      socket.emit('joinRoom', rooms[roomId].state);
+      socket.emit('joinRoom', {state:rooms[roomId].state, onlyHost:rooms[roomId].onlyHost});
     });
 
     socket.on('leaveRoom', () => {
@@ -276,18 +278,19 @@ const socket = (io: any) => {
         return;
       }
 
-      if (
-        rooms[users[userId].roomId].ownerId !== '' &&
-        rooms[users[userId].roomId].ownerId !== userId
-      ) {
-        //inform
-        console.log(
-          `User ${userId} attempted to update room ${
-            users[userId].roomId
-          } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
-        );
-        // return;
-      }
+      // if (
+      //   rooms[users[userId].roomId].ownerId !== '' &&
+      //   rooms[users[userId].roomId].ownerId !== userId &&
+      //   rooms[users[userId].roomId].onlyHost   // restrict other users only if the room explicitely states that only host has control 
+      // ) {
+      //   //inform
+      //   console.log(
+      //     `User ${userId} attempted to update room ${
+      //       users[userId].roomId
+      //     } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+      //   );
+      //   return;
+      // }
 
       rooms[users[userId].roomId].state = data;
 
@@ -334,18 +337,19 @@ const socket = (io: any) => {
         return;
       }
 
-      if (
-        rooms[users[userId].roomId].ownerId !== '' &&
-        rooms[users[userId].roomId].ownerId !== userId
-      ) {
-        //inform
-        console.log(
-          `User ${userId} attempted to update room ${
-            users[userId].roomId
-          } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
-        );
-        // return;
-      }
+      // if (
+      //   rooms[users[userId].roomId].ownerId !== '' &&
+      //   rooms[users[userId].roomId].ownerId !== userId &&
+      //   rooms[users[userId].roomId].onlyHost             // restrict other users only if the room explicitely states that only host has control 
+      // ) {
+      //   //inform
+      //   console.log(
+      //     `User ${userId} attempted to update room ${
+      //       users[userId].roomId
+      //     } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+      //   );
+      //   return;
+      // }
 
       rooms[users[userId].roomId].state = data;
 
@@ -392,18 +396,19 @@ const socket = (io: any) => {
         return;
       }
 
-      if (
-        rooms[users[userId].roomId].ownerId !== '' &&
-        rooms[users[userId].roomId].ownerId !== userId
-      ) {
-        //inform
-        console.log(
-          `User ${userId} attempted to update room ${
-            users[userId].roomId
-          } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
-        );
-        // return;
-      }
+      // if (
+      //   rooms[users[userId].roomId].ownerId !== '' &&
+      //   rooms[users[userId].roomId].ownerId !== userId &&
+      //   rooms[users[userId].roomId].onlyHost        // restrict other users only if the room explicitely states that only host has control 
+      // ) {
+      //   //inform
+      //   console.log(
+      //     `User ${userId} attempted to update room ${
+      //       users[userId].roomId
+      //     } but the room is locked by ${rooms[users[userId].roomId].ownerId}.`
+      //   );
+      //   return;
+      // }
 
       rooms[users[userId].roomId].state = data;
 
