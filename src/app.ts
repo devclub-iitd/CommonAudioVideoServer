@@ -33,9 +33,9 @@ app.use('/healthz', (_0: Request, res: Response) => {
   res.send('Ok, Healthy!');
 });
 
-app.get('/client/stream/', (req:Request, res:Response) => {
-  let filepath = path.join(__dirname, '/../../src/assets/pages/index.html');
-  console.log(filepath,'serving');
+app.get('/client/stream/', (req: Request, res: Response) => {
+  const filepath = path.join(__dirname, '/../../src/assets/pages/index.html');
+  console.log(filepath, 'serving');
   res.sendFile(filepath);
 });
 

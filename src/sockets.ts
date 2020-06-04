@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as socketio from 'socket.io';
 // import * as lodash from 'lodash';
 import Track from './models/track';
@@ -90,30 +91,30 @@ const socket = (io: any) => {
     socket.emit('userId', {userId: userId});
     console.log('User ' + userId + ' connected.');
 
-    const sendMessage = (body: string, isSystemMessage: boolean) => {
-      const message: MESSAGE = {
-        body: body,
-        isSystemMessage: isSystemMessage,
-        timestamp: new Date(),
-        userId: userId,
-      };
-      // try {
-      //   rooms[users[userId].roomId].messages.push(message);
-      // } catch (error) {
-      //   console.log(error);
-      // }
+    // const sendMessage = (body: string, isSystemMessage: boolean) => {
+    //   const message: MESSAGE = {
+    //     body: body,
+    //     isSystemMessage: isSystemMessage,
+    //     timestamp: new Date(),
+    //     userId: userId,
+    //   };
+    // try {
+    //   rooms[users[userId].roomId].messages.push(message);
+    // } catch (error) {
+    //   console.log(error);
+    // }
 
-      // console.log('Sending message in room ' + users[userId].roomId + '.');
-      // io.sockets.in(users[userId].roomId).emit('sendMessage', {
-      //   body: message.body,
-      //   isSystemMessage: isSystemMessage,
-      //   timestamp: message.timestamp.getTime(),
-      //   userId: message.userId,
-      // });
-    };
+    // console.log('Sending message in room ' + users[userId].roomId + '.');
+    // io.sockets.in(users[userId].roomId).emit('sendMessage', {
+    //   body: message.body,
+    //   isSystemMessage: isSystemMessage,
+    //   timestamp: message.timestamp.getTime(),
+    //   userId: message.userId,
+    // });
+    // };
 
     const leaveRoom = () => {
-      sendMessage('left', true);
+      // sendMessage('left', true);
       const roomId = users[userId].roomId;
       console.log(roomId);
       socket.leave(roomId);
@@ -182,7 +183,7 @@ const socket = (io: any) => {
       users[userId].roomId = roomId;
       rooms[room.id] = room;
       socket.join(roomId);
-      sendMessage('created the room:', true);
+      // sendMessage('created the room:', true);
       console.log('User ' + userId + ' created room ' + users[userId].roomId);
       io.in(roomId).emit('createRoom', {roomId: roomId});
     });
@@ -217,10 +218,13 @@ const socket = (io: any) => {
       users[userId].roomId = roomId;
       rooms[roomId].userIds.push(userId);
       socket.join(roomId);
-      sendMessage('joined', true);
+      // sendMessage('joined', true);
       console.log('User ' + userId + ' joined room ' + roomId + '.');
       socket.emit('trackId', {trackId: rooms[roomId].trackId});
-      socket.emit('joinRoom', {state:rooms[roomId].state, onlyHost:rooms[roomId].onlyHost});
+      socket.emit('joinRoom', {
+        state: rooms[roomId].state,
+        onlyHost: rooms[roomId].onlyHost,
+      });
     });
 
     socket.on('leaveRoom', () => {
@@ -281,7 +285,7 @@ const socket = (io: any) => {
       // if (
       //   rooms[users[userId].roomId].ownerId !== '' &&
       //   rooms[users[userId].roomId].ownerId !== userId &&
-      //   rooms[users[userId].roomId].onlyHost   // restrict other users only if the room explicitely states that only host has control 
+      //   rooms[users[userId].roomId].onlyHost   // restrict other users only if the room explicitely states that only host has control
       // ) {
       //   //inform
       //   console.log(
@@ -340,7 +344,7 @@ const socket = (io: any) => {
       // if (
       //   rooms[users[userId].roomId].ownerId !== '' &&
       //   rooms[users[userId].roomId].ownerId !== userId &&
-      //   rooms[users[userId].roomId].onlyHost             // restrict other users only if the room explicitely states that only host has control 
+      //   rooms[users[userId].roomId].onlyHost             // restrict other users only if the room explicitely states that only host has control
       // ) {
       //   //inform
       //   console.log(
@@ -399,7 +403,7 @@ const socket = (io: any) => {
       // if (
       //   rooms[users[userId].roomId].ownerId !== '' &&
       //   rooms[users[userId].roomId].ownerId !== userId &&
-      //   rooms[users[userId].roomId].onlyHost        // restrict other users only if the room explicitely states that only host has control 
+      //   rooms[users[userId].roomId].onlyHost        // restrict other users only if the room explicitely states that only host has control
       // ) {
       //   //inform
       //   console.log(
