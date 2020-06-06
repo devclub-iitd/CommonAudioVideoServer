@@ -4,6 +4,7 @@ import * as bodyParser from 'body-parser';
 import {Request, Response, NextFunction} from 'express';
 import routes from './routes';
 import logRequest from './middlewares/logRequest';
+import * as path from 'path';
 
 // Create Express server.
 const app = express();
@@ -14,6 +15,8 @@ app.use(compression());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(logRequest);
+app.use(express.static(path.join(__dirname, '/../../src/assets')));
+
 // app.set('view engine', 'ejs');
 
 app.get('/', (_, res) => {
@@ -28,6 +31,12 @@ app.use('/api', routes);
 
 app.use('/healthz', (_0: Request, res: Response) => {
   res.send('Ok, Healthy!');
+});
+
+app.get('/client/stream/', (req: Request, res: Response) => {
+  const filepath = path.join(__dirname, '/../../src/assets/pages/index.html');
+  console.log(filepath, 'serving');
+  res.sendFile(filepath);
 });
 
 app.use((_req: Request, _res: Response, next: NextFunction): void => {
@@ -47,5 +56,5 @@ app.use(
     });
   }
 );
-
+// console.log(__dirname)
 export default app;

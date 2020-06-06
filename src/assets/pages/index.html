@@ -1,0 +1,27 @@
+<html>
+<body>
+    <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+    <audio controls id="audiosrc" src="">
+    </audio>
+    <style>
+        #audiosrc {
+            display: block;
+            position: relative;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        body {
+            background-image: url("https://images.unsplash.com/photo-1506269351850-0428eaed2193?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1950&q=80");
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
+    <script src="node_modules/socket.io-client/dist/socket.io.js"></script>
+    <script src="/js/index.js"></script>
+</body>
+
+</html>
