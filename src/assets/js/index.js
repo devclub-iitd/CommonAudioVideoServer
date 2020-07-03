@@ -18,12 +18,23 @@ const socket = io('http://localhost:5000/');
 const maxError = 0.5;
 const eventTimeDiff = 1;
 const interval = 1000;
+let networkOffset = 0;
 let disableEventListener = false;
 let onlyHost = false;
 
 let userId = '';
 const roomId = getParams(location.href).roomId;
 let trackId = '';
+
+const getNetworkOffset = async () => {
+  const reqStart = new Date().getTime();
+  const response = await axios.get('http://localhost:5000/time');
+  const time = response.data.time;
+  const reqEnd = new Date().getTime();
+  networkOffset = ((reqEnd + reqStart) / 2 - time) / 1000;
+  console.log('Network Latency predicted as ' + networkOffset);
+};
+getNetworkOffset();
 
 const audio = document.getElementById('audiosrc');
 let lastState = {};
@@ -34,7 +45,10 @@ setInterval(() => {
   if (lastState.is_playing) audio.play();
   else audio.pause();
   const expectedPosition = lastState.is_playing
-    ? new Date().getTime() / 1000 - lastState.last_updated + lastState.position
+    ? new Date().getTime() / 1000 -
+      lastState.last_updated +
+      lastState.position -
+      networkOffset
     : lastState.position;
   if (Math.abs(audio.currentTime - expectedPosition) >= maxError) {
     console.log('Syncing now...');
@@ -50,7 +64,10 @@ setInterval(() => {
 
 const setPlaybackTime = data => {
   lastRecievedAt = new Date().getTime() / 1000;
-  audio.currentTime = data.position + lastRecievedAt - data.last_updated;
+  console.log('Recieved data at' + lastRecievedAt);
+  audio.currentTime =
+    data.position + lastRecievedAt - data.last_updated - networkOffset;
+  console.log('setting current time to ' + audio.currentTime);
 };
 
 socket.emit('joinRoom', {roomId: roomId});
@@ -93,6 +110,9 @@ socket.on('play', data => {
   disableEventListener = true;
 
   console.log('playing audio');
+  console.log('Play data recieved');
+  console.log(data);
+
   setPlaybackTime(data);
   audio.play();
   lastState = data;
