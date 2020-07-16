@@ -109,3 +109,25 @@ export const postAudio = async (
     return next(err);
   }
 };
+
+export const deleteTrack = async (trackId: string) => {
+  try {
+    const gfs = GridFs(mongoose.connection.db, mongoose.mongo);
+    const track = await Track.findById(trackId);
+    if (!track) {
+      return {message: 'Track not found.'};
+    }
+    const fileId = track.trackBinaryId;
+    await Track.findByIdAndDelete(trackId, (err: Error) => {
+      if (err) return {error: err};
+      gfs.remove({_id: fileId.toHexString(), root: 'uploads'}, (err: Error) => {
+        if (err) return {error: err};
+        console.log('success');
+        return {message: `Deleted ${trackId}`};
+      });
+      return {message: `Deleted ${trackId}`};
+    });
+  } catch (err) {
+    return err;
+  }
+};
