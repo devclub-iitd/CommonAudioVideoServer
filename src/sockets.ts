@@ -2,6 +2,8 @@
 import * as socketio from 'socket.io';
 // import * as lodash from 'lodash';
 import Track from './models/track';
+import {stringify} from 'querystring';
+import {deleteTrack} from './controllers/track';
 
 interface USER {
   id: string;
@@ -29,8 +31,9 @@ interface ROOM {
   messages: MESSAGE[];
   userIds: string[];
   ownerId: string;
+  tracks: string[];
   state: STATE;
-  trackId: string;
+  currentTrackId: string;
   onlyHost: boolean;
 }
 
@@ -119,9 +122,14 @@ const socket = (io: any) => {
       console.log(roomId);
       socket.leave(roomId);
       // lodash.pull(rooms[roomId].userIds, userId);
+      rooms[roomId].userIds = rooms[roomId].userIds.filter(value => {
+        return value !== userId;
+      });
       users[userId].roomId = '';
       try {
+        console.log(rooms[roomId].userIds);
         if (rooms[roomId].userIds.length === 0) {
+          rooms[roomId].tracks.forEach(element => deleteTrack(element));
           delete rooms[roomId];
           console.log(
             `Room ${roomId} was deleted because there were no more users in it.`
@@ -132,13 +140,14 @@ const socket = (io: any) => {
       }
     };
 
-    socket.on('createRoom', async (data: Record<string, string | boolean>) => {
+    socket.on('createRoom', async () => {
+      //data: Record<string, string | boolean>) => {
       if (!Object.prototype.hasOwnProperty.call(users, userId)) {
         //inform
         console.log('The socket received a message after it was disconnected.');
         return;
       }
-
+      /*
       if (!validateAudioId(data.title as string)) {
         //inform
         console.log(
@@ -153,7 +162,7 @@ const socket = (io: any) => {
         );
         return;
       }
-
+      */
       if (users[userId].roomId !== '') {
         //inform
         console.log('User already in a room.');
@@ -168,17 +177,19 @@ const socket = (io: any) => {
         is_playing: false,
         position: 0,
         last_updated: 0,
-        title: data.title as string,
+        title: '',
         duration: 0,
       };
       const room = {
         id: roomId,
         messages: [],
+        tracks: [],
         state: initial_state,
         userIds: [userId],
         ownerId: userId,
-        trackId: data.trackId as string,
-        onlyHost: data.onlyHost as boolean,
+        currentTrackId: '',
+        onlyHost: true,
+        //data.onlyHost as boolean,
       };
       users[userId].roomId = roomId;
       rooms[room.id] = room;
@@ -220,10 +231,37 @@ const socket = (io: any) => {
       socket.join(roomId);
       // sendMessage('joined', true);
       console.log('User ' + userId + ' joined room ' + roomId + '.');
-      socket.emit('trackId', {trackId: rooms[roomId].trackId});
+      socket.emit('trackId', {trackId: rooms[roomId].currentTrackId});
       socket.emit('joinRoom', {
         state: rooms[roomId].state,
         onlyHost: rooms[roomId].onlyHost,
+      });
+    });
+
+    socket.on('addTrack', async (data: Record<string, string>) => {
+      if (!(await validateTrackId(data.trackId as string))) {
+        console.log(
+          `User ${userId} attempted to add invalid trackId ${data.trackId}.`
+        );
+        return;
+      }
+      rooms[users[userId].roomId].tracks.push(data.trackId);
+      if (rooms[users[userId].roomId].tracks.length === 1) {
+        rooms[users[userId].roomId].currentTrackId = data.trackId;
+        socket.to(users[userId].roomId).emit('trackId', {
+          trackId: rooms[users[userId].roomId].currentTrackId,
+        });
+      }
+    });
+
+    socket.on('changeTrack', (data: Record<string, string>) => {
+      if (!rooms[users[userId].roomId].tracks.includes(data.trackId)) {
+        console.log('trackId invalid');
+        return;
+      }
+      rooms[users[userId].roomId].currentTrackId = data.trackId;
+      socket.to(users[userId].roomId).emit('trackId', {
+        trackId: rooms[users[userId].roomId].currentTrackId,
       });
     });
 
@@ -430,7 +468,7 @@ const socket = (io: any) => {
         return;
       }
 
-      if (users[userId].roomId !== null) {
+      if (users[userId].roomId.length === 16) {
         leaveRoom();
       }
       delete users[userId];
