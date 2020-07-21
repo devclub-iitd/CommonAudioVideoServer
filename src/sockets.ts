@@ -140,8 +140,7 @@ const socket = (io: any) => {
       }
     };
 
-    socket.on('createRoom', async () => {
-      //data: Record<string, string | boolean>) => {
+    socket.on('createRoom', async (data: Record<string, boolean>) => {
       if (!Object.prototype.hasOwnProperty.call(users, userId)) {
         //inform
         console.log('The socket received a message after it was disconnected.');
@@ -163,6 +162,7 @@ const socket = (io: any) => {
         return;
       }
       */
+      console.log('roomcreate');
       if (users[userId].roomId !== '') {
         //inform
         console.log('User already in a room.');
@@ -188,8 +188,7 @@ const socket = (io: any) => {
         userIds: [userId],
         ownerId: userId,
         currentTrackId: '',
-        onlyHost: true,
-        //data.onlyHost as boolean,
+        onlyHost: data.onlyHost as boolean,
       };
       users[userId].roomId = roomId;
       rooms[room.id] = room;
