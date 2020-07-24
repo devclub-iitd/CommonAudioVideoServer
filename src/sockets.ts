@@ -2,7 +2,6 @@
 import * as socketio from 'socket.io';
 // import * as lodash from 'lodash';
 import Track from './models/track';
-import {stringify} from 'querystring';
 import {deleteTrack} from './controllers/track';
 
 interface USER {
@@ -252,10 +251,6 @@ const socket = (io: any) => {
         rooms[users[userId].roomId].currentTrackId = data.trackId;
         socket.to(users[userId].roomId).emit('trackId', {
           trackId: rooms[users[userId].roomId].currentTrackId,
-        });
-        socket.to(users[userId].roomId).emit('joinRoom', {
-          state: rooms[users[userId].roomId].state,
-          onlyHost: rooms[users[userId].roomId].onlyHost,
         });
       }
     });
