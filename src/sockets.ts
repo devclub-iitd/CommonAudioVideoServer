@@ -25,7 +25,10 @@ interface STATE {
   is_playing: boolean;
   position: number;
 }
-
+interface TRACKSTATE {
+  state: STATE;
+  trackId: string;
+}
 interface ROOM {
   id: string;
   messages: MESSAGE[];
@@ -250,17 +253,27 @@ const socket = (io: any) => {
         socket.to(users[userId].roomId).emit('trackId', {
           trackId: rooms[users[userId].roomId].currentTrackId,
         });
+        socket.to(users[userId].roomId).emit('joinRoom', {
+          state: rooms[users[userId].roomId].state,
+          onlyHost: rooms[users[userId].roomId].onlyHost,
+        });
       }
     });
 
-    socket.on('changeTrack', (data: Record<string, string>) => {
+    socket.on('changeTrack', (data: TRACKSTATE) => {
       if (!rooms[users[userId].roomId].tracks.includes(data.trackId)) {
         console.log('trackId invalid');
         return;
       }
-      rooms[users[userId].roomId].currentTrackId = data.trackId;
+      const roomId = users[userId].roomId;
+      rooms[roomId].currentTrackId = data.trackId;
+      rooms[roomId].state = data.state;
       socket.to(users[userId].roomId).emit('trackId', {
         trackId: rooms[users[userId].roomId].currentTrackId,
+      });
+      socket.to(roomId).emit('joinRoom', {
+        state: rooms[roomId].state,
+        onlyHost: rooms[roomId].onlyHost,
       });
     });
 
