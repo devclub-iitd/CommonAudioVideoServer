@@ -69,10 +69,15 @@ const setPlaybackTime = data => {
     data.position + lastRecievedAt - data.last_updated - networkOffset;
   console.log('setting current time to ' + audio.currentTime);
 };
+document.getElementById('joinRoom').addEventListener('click', () => {
+  socket.emit('joinRoom', {
+    roomId: roomId,
+  });
+  document.getElementById('joinRoom').remove();
+});
 
-socket.emit('joinRoom', {roomId: roomId});
 socket.on('joinRoom', data => {
-  console.log('Present state is: ');
+  console.log('Recieved present state data: ');
   console.log(data);
   lastState = data.state;
   onlyHost = data.onlyHost;
@@ -84,6 +89,7 @@ socket.on('userId', data => {
 });
 
 socket.on('trackId', data => {
+  console.log('new trackID recieved');
   console.log(data);
   trackId = data.trackId;
   audio.src = 'http://localhost:5000/api/listen/' + trackId;

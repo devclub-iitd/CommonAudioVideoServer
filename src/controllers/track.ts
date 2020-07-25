@@ -7,7 +7,6 @@ import {MONGODB_URI} from '../utils/secrets';
 import * as multer from 'multer';
 import * as crypto from 'crypto';
 import * as path from 'path';
-// import * as Grid from 'gridfs-stream';
 
 export const listen = async (
   req: Request,
@@ -107,5 +106,63 @@ export const postAudio = async (
     return res.json({file: req.file, trackId: track._id});
   } catch (err) {
     return next(err);
+  }
+};
+
+export const deleteTrack = async (trackId: string) => {
+  // try {
+  //   const gfs = GridFs(mongoose.connection.db, mongoose.mongo);
+  //   const track = await Track.findById(trackId);
+  //   if (!track) {
+  //     return {message: 'Track not found.'};
+  //   }
+  //   const fileId = track.trackBinaryId;
+  //   await Track.findByIdAndDelete(trackId, (err: Error) => {
+  //     if (err) return {error: err};
+  //     gfs.remove({_id: fileId.toHexString(), root: 'uploads'}, (err: Error) => {
+  //       if (err) return {error: err};
+  //       console.log('success');
+  //       return {message: `Deleted ${trackId}`};
+  //     });
+  //     gfs.files.deleteOne()
+  //     return {message: `Deleted ${trackId}`};
+  //   });
+  // } catch (err) {
+  //   return err;
+  // }
+  // try {
+  //   var bucket = new GridFSBucket(mongoose.connection.db, {
+  //     bucketName: 'uploads',
+  //   });
+  //   const track = await Track.findById(trackId);
+  //   if (!track) {
+  //     return {message: 'Track not found.'};
+  //   }
+  //   const fileId = track.trackBinaryId;
+  //   bucket.delete(fileId.toHexString());
+  // } catch (err) {
+  //   return err;
+  // }
+  try {
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: 'uploads',
+    });
+    const track = await Track.findById(trackId);
+    if (!track) {
+      return {message: 'Track not found.'};
+    }
+    const fileId = track.trackBinaryId;
+    await Track.findByIdAndDelete(trackId, (err: Error) => {
+      if (err) return {error: err};
+      console.log('Track File deleted!');
+      bucket.delete(fileId, (err: any) => {
+        if (err) return {error: err};
+        console.log('gridfs file deleted!');
+        return {message: `Deleted ${trackId}`};
+      });
+      return {message: `Deleted ${trackId}`};
+    });
+  } catch (err) {
+    return err;
   }
 };
