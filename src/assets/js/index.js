@@ -13,7 +13,7 @@ const getParams = function (url) {
   return params;
 };
 
-const socket = io('http://localhost:5000/');
+const socket = io('http://aa0daac89aba.ngrok.io/');
 
 const maxError = 0.5;
 const eventTimeDiff = 1;
@@ -28,7 +28,7 @@ let trackId = '';
 
 const getNetworkOffset = async () => {
   const reqStart = new Date().getTime();
-  const response = await axios.get('http://localhost:5000/time');
+  const response = await axios.get('http://aa0daac89aba.ngrok.io/time');
   const time = response.data.time;
   const reqEnd = new Date().getTime();
   networkOffset = ((reqEnd + reqStart) / 2 - time) / 1000;
@@ -92,7 +92,7 @@ socket.on('trackId', data => {
   console.log('new trackID recieved');
   console.log(data);
   trackId = data.trackId;
-  audio.src = 'http://localhost:5000/api/listen/' + trackId;
+  audio.src = 'http://aa0daac89aba.ngrok.io/api/listen/' + trackId;
 });
 
 socket.on('sendMessage', msg => {
